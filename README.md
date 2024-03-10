@@ -1,5 +1,7 @@
 # WaveU3S
 
+
+
 ## Introduction
 
 ![framework](./figure/image.jpg) 
@@ -10,6 +12,9 @@ WaveU3S is a segmentation network for 3D medical image. Its purpose is to reduci
 
 ## Start
 Our models are built based on [nnUNet V2](https://github.com/MIC-DKFZ/nnUNet )
+
+The model files are located in ```./nnunetv2/training/nnUNetTrainer/model```
+
 ### Clone repository
 ```shell
 git clone git@github.com:kingofengineer/WaveU3S.git
@@ -58,7 +63,7 @@ nnUNetv2_predict -i input_dir -o output_dir -d DATASET_ID -c 3d_fullres --save_p
 ## Citation
 - If you find this work is helpful, please cite our paper
 ```
-@inproceedings{ISBI2024,
+@inproceedings{Z2024,
     title={WaveU3S: A Lightweight Wavelet Dual-attention Unet For 3D Medical Image Segmentation},
     author={Tianzhao Zhong, Huaishui Yang, Jihao Li, Mengye Lyu, Shaojun Liu},
     booktitle={IEEE International Symposium on Biomedical Imaging},
