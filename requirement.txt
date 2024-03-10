@@ -1,0 +1,15 @@
+python==3.9
+pytotch==2.0.1_cu117
+torchvision==0.15.2_cu117
+opencv-python==4.5
+tensorboard
+monai
+medpy
+SimpleITK
+nibabel
+einops
+typing
+numpy
+math
+sys
+pywt

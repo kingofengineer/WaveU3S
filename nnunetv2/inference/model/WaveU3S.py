@@ -14,7 +14,7 @@ import math
 import pywt
 from torch.autograd import Function
 einops, _ = optional_import("einops")
-import math
+
 
 
 class IDWT_Function3D(Function):
@@ -64,8 +64,7 @@ class IDWT_3D(nn.Module):
         HL = rec_hi.unsqueeze(0) * rec_lo.unsqueeze(1)
         HH = rec_hi.unsqueeze(0) * rec_hi.unsqueeze(1)
         
-        
-# 从2维滤波器到3维滤波器
+    
         w_lll = LL.unsqueeze(2) * rec_lo.unsqueeze(0).unsqueeze(1)
         w_llh = LL.unsqueeze(2) * rec_hi.unsqueeze(0).unsqueeze(1)
         w_lhl = LH.unsqueeze(2) * rec_lo.unsqueeze(0).unsqueeze(1)
@@ -101,14 +100,14 @@ class DWT_3D(nn.Module):
         dec_lo = torch.Tensor(w.dec_lo[::-1])
 
 
-# 从1维滤波器到2维滤波器
+# 1D to 2D
         LL = dec_lo.unsqueeze(0) * dec_lo.unsqueeze(1)
         LH = dec_lo.unsqueeze(0) * dec_hi.unsqueeze(1)
         HL = dec_hi.unsqueeze(0) * dec_lo.unsqueeze(1)
         HH = dec_hi.unsqueeze(0) * dec_hi.unsqueeze(1)
         
         
-# 从2维滤波器到3维滤波器
+# 2D to 3D
         w_lll = LL.unsqueeze(2) * dec_lo.unsqueeze(0).unsqueeze(1)
         w_llh = LL.unsqueeze(2) * dec_hi.unsqueeze(0).unsqueeze(1)
         w_lhl = LH.unsqueeze(2) * dec_lo.unsqueeze(0).unsqueeze(1)
@@ -368,12 +367,8 @@ class WCDA_O(nn.Module):
         self.temperature = nn.Parameter(torch.ones(num_heads, 1, 1))
         self.temperature2 = nn.Parameter(torch.ones(num_heads, 1, 1))
 
-        # qkvv are 4 linear layers (query_shared, key_shared, value_spatial, value_channel)
-        self.qkvv = nn.Linear(hidden_size, hidden_size * 4, bias=qkv_bias)
-
-        # E and F are projection matrices with shared weights used in spatial attention module to project
-        # keys and values from HWD-dimension to P-dimension
-        self.E = self.F = nn.Linear(input_size, proj_size)
+        # qkvv are 6 linear layers (query_shared, key_shared, value_spatial, value_channel)
+        self.qkvv = nn.Linear(hidden_size, hidden_size * 6, bias=qkv_bias)
 
         self.attn_drop = nn.Dropout(channel_attn_drop)
         self.attn_drop_2 = nn.Dropout(spatial_attn_drop)
@@ -383,39 +378,40 @@ class WCDA_O(nn.Module):
 
     def forward(self, x,H,W,D):
         B, N, C = x.shape
-        qkvv = self.qkvv(x).reshape(B, N, 4, self.num_heads, C // self.num_heads)
+        qkvv = self.qkvv(x).reshape(B, N, 6, self.num_heads, C // self.num_heads)
         x = x.view(B, H, W, D, C).permute(0, 4, 1, 2, 3)  #[B,C,H,W,D]
         #([4, 32, 24, 24, 24])
         #print(x.shape)
         qkvv = qkvv.permute(2, 0, 3, 1, 4)
 
-        q_shared, k_shared, v_CA, v_SA = qkvv[0], qkvv[1], qkvv[2], qkvv[3]
+        q_CA,q_SA, k_CA,k_SA, v_CA, v_SA = qkvv[0], qkvv[1], qkvv[2], qkvv[3], qkvv[4], qkvv[5]
 
-        q_shared = q_shared.transpose(-2, -1)
-        k_shared = k_shared.transpose(-2, -1)
+        q_CA = q_CA.transpose(-2, -1)
+        q_SA = q_SA.transpose(-2, -1)
+        k_CA = k_CA.transpose(-2, -1)
+        k_SA = k_SA.transpose(-2, -1)
         v_CA = v_CA.transpose(-2, -1)
         v_SA = v_SA.transpose(-2, -1)
         
-        k_shared_projected = self.E(k_shared)
 
-        v_SA_projected = self.F(v_SA)
-
-        q_shared = torch.nn.functional.normalize(q_shared, dim=-1)
-        k_shared = torch.nn.functional.normalize(k_shared, dim=-1)
-
-        attn_CA = (q_shared @ k_shared.transpose(-2, -1)) * self.temperature
+        q_CA = torch.nn.functional.normalize(q_CA, dim=-1)
+        q_SA = torch.nn.functional.normalize(q_SA, dim=-1)
+        k_CA = torch.nn.functional.normalize(k_CA, dim=-1)
+        k_SA = torch.nn.functional.normalize(k_SA, dim=-1)
+        
+        attn_CA = (q_CA @ k_CA.transpose(-2, -1)) * self.temperature
 
         attn_CA = attn_CA.softmax(dim=-1)
         attn_CA = self.attn_drop(attn_CA)
 
         x_CA = (attn_CA @ v_CA).permute(0, 3, 1, 2).reshape(B, N, C)
 
-        attn_SA = (q_shared.permute(0, 1, 3, 2) @ k_shared_projected) * self.temperature2
+        attn_SA = (q_SA.permute(0, 1, 3, 2) @ k_SA) * self.temperature2
 
         attn_SA = attn_SA.softmax(dim=-1)
         attn_SA = self.attn_drop_2(attn_SA)
 
-        x_SA = (attn_SA @ v_SA_projected.transpose(-2, -1)).permute(0, 3, 1, 2).reshape(B, N, C)
+        x_SA = (attn_SA @ v_SA.transpose(-2, -1)).permute(0, 3, 1, 2).reshape(B, N, C)
 
         x_SA = self.out_proj(x_SA)
         x_CA = self.out_proj2(x_CA)
@@ -432,11 +428,9 @@ class WCDA(nn.Module):
         self.temperature = nn.Parameter(torch.ones(num_heads, 1, 1))
         self.temperature2 = nn.Parameter(torch.ones(num_heads, 1, 1))
 
-        # qkvv are 4 linear layers (query_shared, key_shared, value_spatial, value_channel)
+        # qkvv are 2 linear layers (query_shared, key_shared, value_spatial, value_channel)
         self.qkvv = nn.Linear(hidden_size, hidden_size * 2, bias=qkv_bias)
 
-        self.E  = nn.Linear(input_size//8, proj_size) 
-        self.F  = nn.Linear(input_size//8, proj_size)
         self.attn_drop = nn.Dropout(channel_attn_drop)
         self.attn_drop_2 = nn.Dropout(spatial_attn_drop)
 
