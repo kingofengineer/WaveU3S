@@ -25,4 +25,6 @@ pip install -r requirements.txt
 You can obtain the datasets via following links：
 * Abdominal multi organ dataset: [Flare22](https://flare22.grand-challenge.org/Dataset/) 
 * Multi-category cardiac MRI dataset: [ACDC](https://humanheart-project.creatis.insa-lyon.fr/database/#collection/637218c173e9f0047faa00fb) 
+Please refer to nnUNetv2 for data storage rules and data preprocessing.
+Modify the patch size of the configuration file ```nnUNetPlans.json ``` by using ```modify_Plans.py``` .
 
