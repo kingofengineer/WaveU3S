@@ -36,7 +36,7 @@ You can obtain the datasets via following links：
 * Multi-category cardiac MRI dataset: [ACDC](https://humanheart-project.creatis.insa-lyon.fr/database/#collection/637218c173e9f0047faa00fb) 
 
 
-The pseudo-labels for the 2,000 examples we are using were generated through inference using [Hang et al.'s model](https://github.com/Ziyan-Huang/FLARE22).
+The pseudo-labels for the 2,000 examples were generated through inference using [Hang et al.'s model](https://github.com/Ziyan-Huang/FLARE22).
 
 Please refer to nnUNetv2 for [data format](https://github.com/MIC-DKFZ/nnUNet/blob/master/documentation/dataset_format.md) .
 
@@ -44,7 +44,7 @@ Experiment planning and data preprocessing is to use:
 ```
 nnUNetv2_plan_and_preprocess -d DATASET_ID --verify_dataset_integrity
 ```
-You should modify the patch size of the configuration file ```nnUNetPlans.json ``` by using ```modify_Plans.py``` .
+Modify the patch size in the configuration file ```nnUNetPlans.json ``` using the ```modify_Plans.py``` .
 
 
 ### Training
