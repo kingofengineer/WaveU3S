@@ -27,6 +27,6 @@ You can obtain the datasets via following links：
 * Multi-category cardiac MRI dataset: [ACDC](https://humanheart-project.creatis.insa-lyon.fr/database/#collection/637218c173e9f0047faa00fb) 
 
 
-Please refer to nnUNetv2 for data storage rules and data preprocessing
-Modify the patch size of the configuration file ```nnUNetPlans.json ``` by using ```modify_Plans.py``` 
+Please refer to nnUNetv2 for data storage rules and data preprocessing method. 
+Modify the patch size of the configuration file ```nnUNetPlans.json ``` by using ```modify_Plans.py``` .
 
