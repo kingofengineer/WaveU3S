@@ -472,38 +472,38 @@ class WCDA(nn.Module):
         B, N, C = x.shape  
         qkvv = self.qkvv(x).reshape(B, N, 2, self.num_heads, C // self.num_heads)
         qkvv = qkvv.permute(2, 0, 3, 1, 4)
-        v_CA, q_S = qkvv[0], qkvv[1]
+        v_c, q_s = qkvv[0], qkvv[1]
         x = x.view(B, H, W, D, C).permute(0, 4, 1, 2, 3) 
         x_dwt = self.dwt(self.reduce(x))
         x_dwt_f = self.filter(x_dwt)
         qk = self.qk_embed(x_dwt_f).reshape(B, C, -1).permute(0, 2, 1)
         qk = self.qk(qk).reshape(B, -1, 2, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
-        q_c, k_CA= qk[0],qk[1]
+        q_c, k_c= qk[0],qk[1]
         x_idwt = self.idwt(x_dwt)
         for i in range(int(math.log(D/3, 2))-2):
             x_dwt_f = self.dwt(x_dwt_f)
         x_dwt_f = self.reduce2(x_dwt_f)
         qk = self.qk_embed(x_dwt_f).reshape(B, C, -1).permute(0, 2, 1)#[1,36,64]
         qk = self.qk(qk).reshape(B, -1, 2, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
-        k_SA, v_SA= qk[0],qk[1]
+        k_s, v_s= qk[0],qk[1]
         x_idwt = x_idwt.view(B, -1, x_idwt.size(-3)*x_idwt.size(-2)*x_idwt.size(-1)).transpose(1, 2)#[B,H*W,c/4]([1, 576, 16])
         q_c = q_c.transpose(-2, -1)
-        k_SA = k_SA.transpose(-2, -1)
-        k_CA = k_CA.transpose(-2, -1)
-        v_CA = v_CA.transpose(-2, -1)
-        v_SA = v_SA.transpose(-2, -1)
+        k_s = k_s.transpose(-2, -1)
+        k_c = k_c.transpose(-2, -1)
+        v_c = v_c.transpose(-2, -1)
+        v_s = v_s.transpose(-2, -1)
         q_c = torch.nn.functional.normalize(q_c, dim=-1)
-        q_S = torch.nn.functional.normalize(q_S, dim=-1)
-        k_SA = torch.nn.functional.normalize(k_SA, dim=-1)
-        k_CA = torch.nn.functional.normalize(k_CA, dim=-1)
-        attn_CA = (q_c @ k_CA.transpose(-2, -1)) * self.temperature
+        q_s = torch.nn.functional.normalize(q_s, dim=-1)
+        k_s = torch.nn.functional.normalize(k_s, dim=-1)
+        k_c = torch.nn.functional.normalize(k_c, dim=-1)
+        attn_CA = (q_c @ k_c.transpose(-2, -1)) * self.temperature
         attn_CA = attn_CA.softmax(dim=-1)
         attn_CA = self.attn_drop(attn_CA)
-        x_CA = (attn_CA @ v_CA).permute(0, 3, 1, 2).reshape(B, N, C)
-        attn_SA = (q_S@ k_SA) * self.temperature2
+        x_CA = (attn_CA @ v_c).permute(0, 3, 1, 2).reshape(B, N, C)
+        attn_SA = (q_s@ k_s) * self.temperature2
         attn_SA = attn_SA.softmax(dim=-1)
         attn_SA = self.attn_drop_2(attn_SA)
-        x_SA = (attn_SA @ v_SA.transpose(-2, -1)).permute(0, 3, 1, 2).reshape(B, N, C)
+        x_SA = (attn_SA @ v_s.transpose(-2, -1)).permute(0, 3, 1, 2).reshape(B, N, C)
         x_SA = self.out_proj(x_SA)
         x_CA = self.out_proj2(x_CA)
         x = torch.cat((x_SA, x_CA), dim=-1)
