@@ -50,6 +50,13 @@ dependencies = [
     "seaborn",
     "imagecodecs",
     "yacs"
+    "sys"
+    "pywt"
+    "einops"
+    "typing"
+    "monai"
+    "medpy"  
+
 ]
 
 [project.urls]

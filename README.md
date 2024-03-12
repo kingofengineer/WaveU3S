@@ -23,12 +23,6 @@ pip install -e .
 ```
 
 
-### Requirement
-Install requirements.
-```
-pip install -r requirements.txt 
-```
-
 
 ### Dataset and data pre-processing
 You can obtain the datasets via following links：
